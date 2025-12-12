@@ -1,20 +1,17 @@
-package com.stackwise.userservice.domain.entity.valueObject;
+package com.stackwise.userservice.domain.valueObject;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Objects;
 
-public class Resume {
-    private final String resumeUrl;
-
-    public Resume(String resumeUrl) {
+public record Resume(String resumeUrl) {
+    public Resume {
         if (resumeUrl == null || resumeUrl.trim().isEmpty()) {
             throw new IllegalArgumentException("Resume URL cannot be null or empty");
         }
         if (!isValidUrl(resumeUrl)) {
             throw new IllegalArgumentException("Invalid resume URL format");
         }
-        this.resumeUrl = resumeUrl;
     }
 
     private boolean isValidUrl(String url) {
@@ -24,10 +21,6 @@ public class Resume {
         } catch (URISyntaxException e) {
             return false;
         }
-    }
-
-    public String getResumeUrl() {
-        return resumeUrl;
     }
 
     @Override

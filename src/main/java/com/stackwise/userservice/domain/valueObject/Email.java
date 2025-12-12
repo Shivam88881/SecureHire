@@ -1,6 +1,4 @@
-package com.stackwise.userservice.domain.entity.valueObject;
-
-import java.util.Objects;
+package com.stackwise.userservice.domain.valueObject;
 
 /**
  * Value Object representing an email address.
@@ -16,34 +14,35 @@ import java.util.Objects;
  * - Allowed email domains → Application Service or Domain Service
  * - Rate limiting email changes → Application Service
  */
-public class Email {
+public record Email(String emailAddress) {
+
     private static final String EMAIL_REGEX = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
 
-    private final String emailAddress;
-
     /**
-     * Creates an Email value object.
+     * Compact constructor with validation and normalization.
+     * Validates email format and normalizes to lowercase.
      *
-     * @param email the email address to validate
      * @throws IllegalArgumentException if email format is invalid
      */
-    public Email(String email) {
-        if (email == null || email.trim().isEmpty()) {
+    public Email {
+        if (emailAddress == null || emailAddress.trim().isEmpty()) {
             throw new IllegalArgumentException("Email cannot be null or empty");
         }
 
-        String trimmedEmail = email.trim().toLowerCase(); // Normalize to lowercase
+        // Normalize to lowercase
+        emailAddress = emailAddress.trim().toLowerCase();
 
-        if (!isValidFormat(trimmedEmail)) {
+        if (!isValidFormat(emailAddress)) {
             throw new IllegalArgumentException(
-                String.format("Invalid email format: '%s'. Expected format: user@domain.tld", email)
+                String.format("Invalid email format: '%s'. Expected format: user@domain.tld", emailAddress)
             );
         }
-
-        this.emailAddress = trimmedEmail;
     }
 
-    private boolean isValidFormat(String value) {
+    /**
+     * Validates email format according to business rules.
+     */
+    private static boolean isValidFormat(String value) {
         // Validate email format
         if (!value.matches(EMAIL_REGEX)) {
             return false;
@@ -64,16 +63,7 @@ public class Email {
         }
 
         // Domain part (after @) validations
-        if (domainPart.isEmpty() || domainPart.length() > 255) {
-            return false;
-        }
-
-        // Must have at least one dot in domain
-        if (!domainPart.contains(".")) {
-            return false;
-        }
-
-        return true;
+        return domainPart.length() <= 255 && domainPart.contains(".");
     }
 
     /**
@@ -99,18 +89,6 @@ public class Email {
         return emailAddress.substring(0, emailAddress.indexOf('@'));
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Email email = (Email) o;
-        return Objects.equals(emailAddress, email.emailAddress);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(emailAddress);
-    }
 
     @Override
     public String toString() {

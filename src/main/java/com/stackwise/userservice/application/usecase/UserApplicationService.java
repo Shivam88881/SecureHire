@@ -1,144 +1,147 @@
 package com.stackwise.userservice.application.usecase;
 
-import com.stackwise.userservice.domain.entity.User;
-import com.stackwise.userservice.domain.entity.valueObject.Email;
-import com.stackwise.userservice.domain.entity.valueObject.Mobile;
-import com.stackwise.userservice.domain.entity.valueObject.Password;
-import com.stackwise.userservice.domain.service.PasswordEncoderPort;
+import com.stackwise.userservice.domain.entity.UserProfile;
+import com.stackwise.userservice.domain.valueObject.Email;
+import com.stackwise.userservice.domain.valueObject.Mobile;
+import com.stackwise.userservice.domain.valueObject.Role;
 
+import java.net.URI;
 import java.util.UUID;
 
 /**
- * Application Service (Use Case) for User operations.
+ * Application Service (Use Case) for User Profile Management.
  * Orchestrates the flow of data and coordinates domain objects.
  *
- * IMPORTANT: This class depends on PasswordEncoderPort (interface),
- * NOT on the concrete PasswordEncoder implementation.
+ * Separation of Concerns:
+ * - This service handles ONLY user profile and business data management
+ * - Authentication concerns (password, login, tokens) are handled by AuthService
+ * - This follows microservices best practices: each service has a single responsibility
  *
- * Dependency Direction:
- * Application → Domain (Port/Interface)
- * Infrastructure → Domain (implements Port)
- *
- * This follows Dependency Inversion Principle and Clean Architecture.
+ * Clean Architecture:
+ * Application → Domain (orchestrates business logic)
+ * Infrastructure → Application (provides technical capabilities)
  */
 public class UserApplicationService {
 
-    private final PasswordEncoderPort passwordEncoder;
     // private final UserRepository userRepository; // Will be added later
     // private final EventPublisher eventPublisher; // Will be added later
 
-    public UserApplicationService(PasswordEncoderPort passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
+    public UserApplicationService() {
+        // No password encoder needed - that's AuthService's responsibility
     }
 
     /**
-     * Use Case: Register a new user
+     * Use Case: Create a new user profile
      *
      * Flow:
-     * 1. Validate password format using Password VO
-     * 2. Hash the validated password using infrastructure service
-     * 3. Create User entity with hashed password
+     * 1. Validate email uniqueness (business rule)
+     * 2. Create value objects
+     * 3. Create UserProfile entity
      * 4. Save to repository
+     * 5. Publish domain event
+     *
+     * Note: Password registration happens in AuthService separately
+     * 
+     * @param authUserId The user ID from AuthService (after authentication is set up)
      */
-    public User registerUser(String firstName, String lastName, String emailAddress,
-                            String phoneNumber, String countryCode, String plainPassword) {
+    public UserProfile createUserProfile(UUID authUserId, String firstName, String lastName, String emailAddress, URI avatarUrl,
+                                  String phoneNumber, String countryCode, String role) {
 
-        // Step 1: Check business rules (e.g., email uniqueness)
-        // if (userRepository.existsByEmail(emailAddress)) {
-        //     throw new DuplicateEmailException("Email already exists: " + emailAddress);
-        // }
+        // no need to check if user pre-exists here, AuthService handles that
 
-        // Step 2: Validate password format using Password VO (business rule)
-        Password passwordVO = new Password(plainPassword); // Validates format
-
-        // Step 3: Hash the validated password (infrastructure concern)
-        String hashedPassword = passwordEncoder.encode(passwordVO.getValue());
-
-        // Step 4: Create value objects
         Email email = new Email(emailAddress);
         Mobile mobile = new Mobile(phoneNumber, countryCode);
+        Role userRole = new Role(role);
 
-        // Step 5: Create the User entity with HASHED password
-        User newUser = User.createUser(firstName,lastName,emailAddress,mobile.getMobileNumber(),countryCode,hashedPassword);
+        // Use factory methods based on role
+        UserProfile newUserProfile;
+        if (userRole.getRoleType() == Role.RoleType.JOBSEEKER) {
+            newUserProfile = UserProfile.createJobSeeker(firstName, lastName, authUserId, avatarUrl, emailAddress, phoneNumber, countryCode);
+        } else if (userRole.getRoleType() == Role.RoleType.RECRUITER) {
+            newUserProfile = UserProfile.createRecruiter(firstName, lastName, authUserId, avatarUrl, emailAddress, phoneNumber, countryCode);
+        } else if (userRole.getRoleType() == Role.RoleType.ADMIN) {
+            newUserProfile = UserProfile.createAdmin(firstName, lastName, authUserId, avatarUrl, emailAddress, phoneNumber, countryCode);
+        } else {
+            throw new IllegalArgumentException("Invalid role type: " + role);
+        }
 
-        // Step 6: Persist to database
-        // User savedUser = userRepository.save(newUser);
+        // Persist to database
+        // UserProfile savedUserProfile = userRepository.save(newUserProfile);
 
-        // Step 7: Publish domain event
-        // eventPublisher.publish(new UserRegisteredEvent(savedUser));
+        // Publish domain event
+        // eventPublisher.publish(new UserProfileCreatedEvent(savedUserProfile));
 
-        return newUser;
+        return newUserProfile;
     }
 
     /**
-     * Use Case: Authenticate user (login)
-     *
-     * Flow:
-     * 1. Load user from repository
-     * 2. Get hashed password from user
-     * 3. Verify plain text password matches hash
+     * Use Case: Update user email
      */
-    public boolean authenticateUser(String emailAddress, String plainPassword) {
-        // Step 1: Find user by email
-        // User user = userRepository.findByEmail(emailAddress)
-        //     .orElseThrow(() -> new UserNotFoundException(emailAddress));
-
-        // Step 2: Get stored hashed password
-        // String storedHashedPassword = user.getHashedPassword();
-
-        // Step 3: Verify password using infrastructure service
-        // return passwordEncoder.matches(plainPassword, storedHashedPassword);
-
-        return false; // Placeholder
-    }
-
-    /**
-     * Use Case: Change user password
-     *
-     * Flow:
-     * 1. Load user
-     * 2. Verify current password
-     * 3. Validate new password format using Password VO
-     * 4. Hash new password
-     * 5. Update user with hashed password
-     */
-    public void changePassword(String userId, String currentPassword, String newPassword) {
-        // Step 1: Load user
-        // User user = userRepository.findById(UUID.fromString(userId))
-        //     .orElseThrow(() -> new UserNotFoundException(userId));
-
-        // Step 2: Verify current password
-        // if (!passwordEncoder.matches(currentPassword, user.getHashedPassword())) {
-        //     throw new InvalidPasswordException("Current password is incorrect");
-        // }
-
-        // Step 3: Validate new password format using Password VO (business rule)
-        // Password newPasswordVO = new Password(newPassword); // Validates format
-
-        // Step 4: Hash the new password (infrastructure concern)
-        // String newHashedPassword = passwordEncoder.encode(newPasswordVO.getValue());
-
-        // Step 5: Update user entity
-        // user.changePassword(newHashedPassword);
-
-        // Step 6: Save
-        // userRepository.save(user);
-
-        // Step 7: Publish event
-        // eventPublisher.publish(new PasswordChangedEvent(user));
-    }
-
-    /**
-     * Use Case: Block a user account
-     */
-    public void blockUser(String userId) {
+    public void updateUserEmail(String userId, String newEmail) {
         // User user = userRepository.findById(UUID.fromString(userId))
         //     .orElseThrow(() -> new UserNotFoundException(userId));
         //
-        // user.blockUser();
+        // user.updateEmail(newEmail);
         // userRepository.save(user);
         //
-        // eventPublisher.publish(new UserBlockedEvent(user));
+        // eventPublisher.publish(new EmailUpdatedEvent(user));
+    }
+
+    /**
+     * Use Case: Update user mobile
+     */
+    public void updateUserMobile(String userId, String newMobile, String countryCode) {
+        // User user = userRepository.findById(UUID.fromString(userId))
+        //     .orElseThrow(() -> new UserNotFoundException(userId));
+        //
+        // user.updateMobile(newMobile, countryCode);
+        // userRepository.save(user);
+        //
+        // eventPublisher.publish(new MobileUpdatedEvent(user));
+    }
+
+    /**
+     * Use Case: Verify user email
+     */
+    public void verifyEmail(String userId) {
+        // User user = userRepository.findById(UUID.fromString(userId))
+        //     .orElseThrow(() -> new UserNotFoundException(userId));
+        //
+        // user.verifyEmail();
+        // userRepository.save(user);
+        //
+        // eventPublisher.publish(new EmailVerifiedEvent(user));
+    }
+
+    /**
+     * Use Case: Change account status (ACTIVE, INACTIVE, SUSPENDED, DELETED)
+     */
+    public void changeAccountStatus(String userId, String newStatus) {
+        // User user = userRepository.findById(UUID.fromString(userId))
+        //     .orElseThrow(() -> new UserNotFoundException(userId));
+        //
+        // user.changeAccountStatus(newStatus);
+        // userRepository.save(user);
+        //
+        // eventPublisher.publish(new AccountStatusChangedEvent(user, newStatus));
+    }
+
+    /**
+     * Use Case: Get user profile by ID
+     */
+    public UserProfile getUserProfile(String userId) {
+        // return userRepository.findById(UUID.fromString(userId))
+        //     .orElseThrow(() -> new UserNotFoundException(userId));
+        return null; // Placeholder
+    }
+
+    /**
+     * Use Case: Get user profile by email
+     */
+    public UserProfile getUserProfileByEmail(String email) {
+        // return userRepository.findByEmail(email)
+        //     .orElseThrow(() -> new UserNotFoundException(email));
+        return null; // Placeholder
     }
 }
 
