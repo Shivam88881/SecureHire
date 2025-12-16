@@ -21,7 +21,7 @@ import java.util.UUID;
 @Table(name = "users")
 @Getter
 @Setter
-public class UserEntity {
+public class UserProfileEntity {
 
     @Id
     @Column(name = "id", updatable = false, nullable = false)
@@ -75,14 +75,14 @@ public class UserEntity {
     private java.time.LocalDateTime updatedAt;
 
     // Default constructor for JPA
-    protected UserEntity() {
+    protected UserProfileEntity() {
     }
 
     // Constructor
-    public UserEntity(UUID id, String firstName, String lastName, UUID authUserId, URI avatarUrl,
-                     String email, String mobile, String countryCode,
-                     boolean emailVerified, AccountStatus.Status accountStatus,
-                     Role.RoleType role, Address address, List<SocialLink> socialLinks) {
+    public UserProfileEntity(UUID id, String firstName, String lastName, UUID authUserId, URI avatarUrl,
+                             String email, String mobile, String countryCode,
+                             boolean emailVerified, AccountStatus.Status accountStatus,
+                             Role.RoleType role, Address address, List<SocialLink> socialLinks) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;

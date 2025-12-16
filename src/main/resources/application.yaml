@@ -2,6 +2,11 @@ spring:
   application:
     name: userservice
 
+  # Disable Docker Compose support
+  docker:
+    compose:
+      enabled: false
+
   # PostgreSQL Database Configuration
   datasource:
     url: jdbc:postgresql://localhost:5432/securehire_userdb

@@ -1,5 +1,8 @@
 package com.stackwise.userservice.domain.entity;
 
+import com.stackwise.userservice.domain.valueObject.VerificationDocument;
+
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -13,16 +16,23 @@ import java.util.*;
  * - Company information
  */
 public class RecruiterProfile {
+    public enum CompanySize {
+        STARTUP,
+        SMALL,
+        MEDIUM,
+        LARGE,
+        ENTERPRISE
+    }
     private final UUID id;
     private final UUID userProfileId; // Reference to parent UserProfile
 
     // Company Information
     private String companyName;
-    private String companyWebsite;
-    private String companySize; // STARTUP, SMALL, MEDIUM, LARGE, ENTERPRISE
+    private URI companyWebsite;
+    private CompanySize companySize; // STARTUP, SMALL, MEDIUM, LARGE, ENTERPRISE
     private String industry;
     private String companyDescription;
-    private String companyLogoUrl;
+    private URI companyLogoUrl;
 
     // Recruiter Specific
     private String designation;
@@ -30,8 +40,7 @@ public class RecruiterProfile {
 
     // Verification
     private VerificationStatus verificationStatus;
-    private String verificationDocumentUrl; // URL to uploaded document
-    private String verificationDocumentType; // COMPANY_ID, BUSINESS_LICENSE, etc.
+    private List<VerificationDocument> verificationDocuments;
     private LocalDateTime verificationRequestedAt;
     private LocalDateTime verifiedAt;
     private String verificationRejectionReason;
@@ -64,11 +73,11 @@ public class RecruiterProfile {
         return companyName;
     }
 
-    public String getCompanyWebsite() {
+    public URI getCompanyWebsite() {
         return companyWebsite;
     }
 
-    public String getCompanySize() {
+    public CompanySize getCompanySize() {
         return companySize;
     }
 
@@ -80,7 +89,7 @@ public class RecruiterProfile {
         return companyDescription;
     }
 
-    public String getCompanyLogoUrl() {
+    public URI getCompanyLogoUrl() {
         return companyLogoUrl;
     }
 
@@ -96,12 +105,9 @@ public class RecruiterProfile {
         return verificationStatus;
     }
 
-    public String getVerificationDocumentUrl() {
-        return verificationDocumentUrl;
-    }
 
-    public String getVerificationDocumentType() {
-        return verificationDocumentType;
+    public List<VerificationDocument> getVerificationDocuments() {
+        return verificationDocuments;
     }
 
     public LocalDateTime getVerificationRequestedAt() {
@@ -127,8 +133,8 @@ public class RecruiterProfile {
     // Business methods - Company Information
     public void updateCompanyInfo(
             String companyName,
-            String companyWebsite,
-            String companySize,
+            URI companyWebsite,
+            CompanySize companySize,
             String industry,
             String companyDescription) {
 
@@ -137,14 +143,14 @@ public class RecruiterProfile {
         }
 
         this.companyName = companyName.trim();
-        this.companyWebsite = companyWebsite != null ? companyWebsite.trim() : null;
+        this.companyWebsite = companyWebsite;
         this.companySize = companySize;
         this.industry = industry;
         this.companyDescription = companyDescription != null ? companyDescription.trim() : null;
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updateCompanyLogo(String logoUrl) {
+    public void updateCompanyLogo(URI logoUrl) {
         this.companyLogoUrl = logoUrl;
         this.updatedAt = LocalDateTime.now();
     }
@@ -156,11 +162,11 @@ public class RecruiterProfile {
     }
 
     // Business methods - Verification
-    public void requestVerification(String documentUrl, String documentType) {
-        if (documentUrl == null || documentUrl.trim().isEmpty()) {
+    public void requestVerification(URI documentUrl, VerificationDocument.DocumentType documentType) {
+        if (documentUrl == null) {
             throw new IllegalArgumentException("Verification document URL cannot be null or empty");
         }
-        if (documentType == null || documentType.trim().isEmpty()) {
+        if (documentType == null) {
             throw new IllegalArgumentException("Document type cannot be null or empty");
         }
 
@@ -168,8 +174,7 @@ public class RecruiterProfile {
             throw new IllegalStateException("Recruiter is already verified");
         }
 
-        this.verificationDocumentUrl = documentUrl.trim();
-        this.verificationDocumentType = documentType.trim();
+        this.verificationDocuments.add(new VerificationDocument(documentType, documentUrl));
         this.verificationStatus = VerificationStatus.PENDING;
         this.verificationRequestedAt = LocalDateTime.now();
         this.verificationRejectionReason = null;

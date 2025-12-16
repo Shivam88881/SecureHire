@@ -2,7 +2,7 @@ package com.stackwise.userservice.infrastructure.persistence.mapper;
 
 import com.stackwise.userservice.domain.entity.UserProfile;
 import com.stackwise.userservice.domain.valueObject.*;
-import com.stackwise.userservice.infrastructure.persistence.entity.UserEntity;
+import com.stackwise.userservice.infrastructure.persistence.entity.UserProfileEntity;
 import org.springframework.stereotype.Component;
 
 /**
@@ -15,12 +15,12 @@ public class UserMapper {
     /**
      * Convert Domain UserProfile to JPA Entity
      */
-    public UserEntity toEntity(UserProfile userProfile) {
+    public UserProfileEntity toEntity(UserProfile userProfile) {
         if (userProfile == null) {
             return null;
         }
 
-        return new UserEntity(
+        return new UserProfileEntity(
             userProfile.getId(),
             userProfile.getFirstName(),
             userProfile.getLastName(),
@@ -40,30 +40,12 @@ public class UserMapper {
     /**
      * Convert JPA Entity to Domain UserProfile
      */
-    public UserProfile toDomain(UserEntity entity) {
+    public UserProfile toDomain(UserProfileEntity entity) {
         if (entity == null) {
             return null;
         }
 
-        Email email = new Email(entity.getEmail());
-        Mobile mobile = new Mobile(entity.getMobile(), entity.getCountryCode());
-        Role role = new Role(entity.getRole());
-
-        UserProfile userProfile = new UserProfile(
-            entity.getId(),
-            entity.getFirstName(),
-            entity.getLastName(),
-            entity.getAuthUserId(),
-            entity.getAvatarUrl(),
-            email,
-            mobile,
-            role
-        );
-
-        // Set optional fields
-        if (entity.isEmailVerified()) {
-            userProfile.verifyEmail();
-        }
+        UserProfile userProfile = getUserProfile(entity);
 
         // Set account status if different from default
         if (entity.getAccountStatus() != AccountStatus.Status.ACTIVE) {
@@ -80,6 +62,28 @@ public class UserMapper {
             userProfile.setSocialLinks(entity.getSocialLinks());
         }
 
+        return userProfile;
+    }
+
+    private static UserProfile getUserProfile(UserProfileEntity entity) {
+        Email email = new Email(entity.getEmail());
+        Mobile mobile = new Mobile(entity.getMobile(), entity.getCountryCode());
+
+        UserProfile userProfile = new UserProfile(
+            entity.getId(),
+            entity.getFirstName(),
+            entity.getLastName(),
+            entity.getAuthUserId(),
+            entity.getAvatarUrl(),
+            email,
+            mobile,
+            new Role(entity.getRole())
+        );
+
+        // Set optional fields
+        if (entity.isEmailVerified()) {
+            userProfile.verifyEmail();
+        }
         return userProfile;
     }
 }
