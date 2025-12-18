@@ -1,7 +1,7 @@
 package com.stackwise.userservice.infrastructure.persistence.adapter;
 
 import com.stackwise.userservice.domain.entity.UserProfile;
-import com.stackwise.userservice.infrastructure.persistence.entity.UserEntity;
+import com.stackwise.userservice.infrastructure.persistence.entity.UserProfileEntity;
 import com.stackwise.userservice.infrastructure.persistence.mapper.UserMapper;
 import com.stackwise.userservice.infrastructure.persistence.repository.UserJpaRepository;
 import org.springframework.stereotype.Component;
@@ -29,8 +29,8 @@ public class UserPersistenceAdapter {
      * Save or update a user profile
      */
     public UserProfile save(UserProfile userProfile) {
-        UserEntity entity = mapper.toEntity(userProfile);
-        UserEntity saved = jpaRepository.save(entity);
+        UserProfileEntity entity = mapper.toEntity(userProfile);
+        UserProfileEntity saved = jpaRepository.save(entity);
         return mapper.toDomain(saved);
     }
 
@@ -61,7 +61,7 @@ public class UserPersistenceAdapter {
      * Delete user profile
      */
     public void delete(UserProfile userProfile) {
-        UserEntity entity = mapper.toEntity(userProfile);
+        UserProfileEntity entity = mapper.toEntity(userProfile);
         jpaRepository.delete(entity);
     }
 
