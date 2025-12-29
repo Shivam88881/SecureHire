@@ -3,9 +3,10 @@
 
 CREATE TABLE users (
     id UUID PRIMARY KEY,
-    user_id UUID NOT NULL UNIQUE,
+    auth_user_id UUID NOT NULL UNIQUE,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
+    avatar_url TEXT,
     email VARCHAR(255) NOT NULL UNIQUE,
     mobile VARCHAR(20) NOT NULL,
     country_code VARCHAR(10) NOT NULL,
@@ -20,7 +21,7 @@ CREATE TABLE users (
 
 -- Create indexes for frequently queried columns
 CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_user_id ON users(user_id);
+CREATE INDEX idx_users_auth_user_id ON users(auth_user_id);
 CREATE INDEX idx_users_account_status ON users(account_status);
 
 -- Optional: Create GIN index for JSON columns if you need to query inside JSON
